@@ -202,6 +202,26 @@ std::string ScriptInfo::GetDebugInfo() const
     return std::string(sz);
 }
 
+
+std::set<std::wstring> ObjectMgr::_reversedNamesDBCStore = {};
+
+void ObjectMgr::LoadReversedNamesFromDBC()
+{
+    ObjectMgr::_reversedNamesDBCStore.clear();
+
+    for (NamesReservedEntry const* reservedStore : sNamesReservedStore)
+    {
+        std::wstring PatternString;
+
+        Utf8toWStr(reservedStore->Pattern, PatternString);
+
+        boost::algorithm::replace_all(PatternString, "\\<", "");
+        boost::algorithm::replace_all(PatternString, "\\>", "");
+
+        ObjectMgr::_reversedNamesDBCStore.insert(PatternString);
+    }
+ }
+
 /**
  * @name ReservedNames
  * @brief Checks NamesReserved.dbc for reserved names
@@ -209,8 +229,11 @@ std::string ScriptInfo::GetDebugInfo() const
  * @param name Name to check for match in NamesReserved.dbc
  * @return true/false
  */
-bool ReservedNames(std::wstring& name)
+bool ObjectMgr::ReservedNames(std::wstring& name)
 {
+    return (ObjectMgr::_reversedNamesDBCStore.find(name) != ObjectMgr::_reversedNamesDBCStore.end());
+
+/*
     for (NamesReservedEntry const* reservedStore : sNamesReservedStore)
     {
         std::wstring PatternString;
@@ -228,7 +251,27 @@ bool ReservedNames(std::wstring& name)
     }
 
     return false;
+*/
 };
+
+std::set<std::wstring> ObjectMgr::_profanityNamesDBCStore = {};
+
+void ObjectMgr::LoadProfanityNamesFromDBC()
+{
+    ObjectMgr::_profanityNamesDBCStore.clear();
+
+    for (NamesProfanityEntry const* profanityStore : sNamesProfanityStore)
+    {
+        std::wstring PatternString;
+
+        Utf8toWStr(profanityStore->Pattern, PatternString);
+
+        boost::algorithm::replace_all(PatternString, "\\<", "");
+        boost::algorithm::replace_all(PatternString, "\\>", "");
+
+        ObjectMgr::_profanityNamesDBCStore.insert(PatternString);
+    }
+}
 
 /**
  * @name ProfanityNames
@@ -237,8 +280,11 @@ bool ReservedNames(std::wstring& name)
  * @param name Name to check for match in NamesProfanity.dbc
  * @return true/false
  */
-bool ProfanityNames(std::wstring& name)
+bool ObjectMgr::ProfanityNames(std::wstring& name)
 {
+    return (ObjectMgr::_profanityNamesDBCStore.find(name) != ObjectMgr::_profanityNamesDBCStore.end());
+
+/*
     for (NamesProfanityEntry const* profanityStore : sNamesProfanityStore)
     {
         std::wstring PatternString;
@@ -256,6 +302,7 @@ bool ProfanityNames(std::wstring& name)
     }
 
     return false;
+*/
 }
 
 bool normalizePlayerName(std::string& name)

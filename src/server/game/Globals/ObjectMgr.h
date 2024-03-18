@@ -691,8 +691,6 @@ SkillRangeType GetSkillRangeType(SkillRaceClassInfoEntry const* rcEntry);
 #define MAX_CHARTER_NAME         24                         // max allowed by client name length
 #define MAX_CHANNEL_NAME         50                         // pussywizard
 
-bool ReservedNames(std::wstring& name);
-bool ProfanityNames(std::wstring& name);
 bool normalizePlayerName(std::string& name);
 
 struct LanguageDesc
@@ -1342,6 +1340,15 @@ public:
     [[nodiscard]] bool IsProfanityName(std::string_view name) const;
     void AddProfanityPlayerName(std::string const& name);
 
+    // DBC reversed names
+    static bool ReservedNames(std::wstring& name);
+    static void LoadReversedNamesFromDBC();
+
+    // DBC profanity names
+    static bool ProfanityNames(std::wstring& name);
+    static void LoadProfanityNamesFromDBC();
+    
+
     // name with valid structure and symbols
     static uint8 CheckPlayerName(std::string_view name, bool create = false);
     static PetNameInvalidReason CheckPetName(std::string_view name);
@@ -1504,10 +1511,12 @@ private:
     //character reserved names
     typedef std::set<std::wstring> ReservedNamesContainer;
     ReservedNamesContainer _reservedNamesStore;
+    static std::set<std::wstring> _reversedNamesDBCStore;
 
     //character profanity names
     typedef std::set<std::wstring> ProfanityNamesContainer;
-    ReservedNamesContainer _profanityNamesStore;
+    ProfanityNamesContainer _profanityNamesStore;
+    static std::set<std::wstring> _profanityNamesDBCStore;
 
     GameTeleContainer _gameTeleStore;
 
@@ -1630,6 +1639,9 @@ private:
     };
     std::vector<GameobjectInstanceSavedState> GameobjectInstanceSavedStateList;
 };
+
+static std::set<std::wstring> _profanityNamesDBCStore;
+static std::set<std::wstring> _reversedNamesDBCStore;
 
 #define sObjectMgr ObjectMgr::instance()
 
