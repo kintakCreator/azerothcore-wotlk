@@ -29,32 +29,32 @@
 
 enum ScriptTexts
 {
-    SAY_ENTER_ZONE              = 0,
-    SAY_AGGRO                   = 1,
-    SAY_BONE_STORM              = 2,
-    SAY_BONESPIKE               = 3,
-    SAY_KILL                    = 4,
-    SAY_DEATH                   = 5,
-    SAY_BERSERK                 = 6,
-    EMOTE_BONE_STORM            = 7,
+    SAY_ENTER_ZONE = 0,
+    SAY_AGGRO = 1,
+    SAY_BONE_STORM = 2,
+    SAY_BONESPIKE = 3,
+    SAY_KILL = 4,
+    SAY_DEATH = 5,
+    SAY_BERSERK = 6,
+    EMOTE_BONE_STORM = 7,
 };
 
 enum Spells
 {
     // Lord Marrowgar
-    SPELL_BONE_SLICE            = 69055,
-    SPELL_BONE_STORM            = 69076,
-    SPELL_BONE_SPIKE_GRAVEYARD  = 69057,
-    SPELL_COLDFLAME_NORMAL      = 69140,
-    SPELL_COLDFLAME_BONE_STORM  = 72705,
+    SPELL_BONE_SLICE = 69055,
+    SPELL_BONE_STORM = 69076,
+    SPELL_BONE_SPIKE_GRAVEYARD = 69057,
+    SPELL_COLDFLAME_NORMAL = 69140,
+    SPELL_COLDFLAME_BONE_STORM = 72705,
 
     // Bone Spike
-    SPELL_IMPALED               = 69065,
-    SPELL_RIDE_VEHICLE          = 46598,
+    SPELL_IMPALED = 69065,
+    SPELL_RIDE_VEHICLE = 46598,
 
     // Coldflame
-    SPELL_COLDFLAME_PASSIVE     = 69145,
-    SPELL_COLDFLAME_SUMMON      = 69147,
+    SPELL_COLDFLAME_PASSIVE = 69145,
+    SPELL_COLDFLAME_SUMMON = 69147,
 };
 
 enum Events
@@ -70,7 +70,7 @@ enum Events
     EVENT_ENRAGE,
 };
 
-uint32 const boneSpikeSummonId[3] = {69062, 72669, 72670};
+uint32 const boneSpikeSummonId[3] = { 69062, 72669, 72670 };
 
 struct BoneStormMoveTargetSelector
 {
@@ -167,85 +167,85 @@ public:
 
         switch (events.ExecuteEvent())
         {
-            case 0:
+        case 0:
+            break;
+        case EVENT_ENABLE_BONE_SLICE:
+            _boneSlice = true;
+            break;
+        case EVENT_SPELL_BONE_SPIKE_GRAVEYARD:
+        {
+            bool a = me->HasAura(SPELL_BONE_STORM);
+            if (IsHeroic() || !a)
+                me->CastSpell(me, SPELL_BONE_SPIKE_GRAVEYARD, a);
+            events.Repeat(15s, 20s);
+        }
+        break;
+        case EVENT_SPELL_COLDFLAME:
+            if (!me->HasAura(SPELL_BONE_STORM))
+                me->CastSpell((Unit*)nullptr, SPELL_COLDFLAME_NORMAL, false);
+            events.Repeat(5s);
+            break;
+        case EVENT_SPELL_COLDFLAME_BONE_STORM:
+            me->CastSpell(me, SPELL_COLDFLAME_BONE_STORM, false);
+            break;
+        case EVENT_WARN_BONE_STORM:
+            _boneSlice = false;
+            Talk(EMOTE_BONE_STORM);
+            Talk(SAY_BONE_STORM);
+            me->FinishSpell(CURRENT_MELEE_SPELL, false);
+            me->CastSpell(me, SPELL_BONE_STORM, false);
+            me->SetReactState(REACT_PASSIVE); // to prevent chasing another target on UpdateVictim()
+            me->GetMotionMaster()->MoveIdle();
+            me->GetMotionMaster()->MovementExpired();
+            events.Repeat(90s, 95s);
+            events.ScheduleEvent(EVENT_BEGIN_BONE_STORM, 3050ms);
+            break;
+        case EVENT_BEGIN_BONE_STORM:
+        {
+            uint32 _boneStormDuration = RAID_MODE<uint32>(20000, 30000, 20000, 30000);
+            if (Aura* pStorm = me->GetAura(SPELL_BONE_STORM))
+                pStorm->SetDuration(int32(_boneStormDuration));
+            events.ScheduleEvent(EVENT_BONE_STORM_MOVE, 0ms);
+            events.ScheduleEvent(EVENT_END_BONE_STORM, _boneStormDuration + 1);
+        }
+        break;
+        case EVENT_BONE_STORM_MOVE:
+        {
+            if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == POINT_MOTION_TYPE)
+            {
+                events.Repeat(1ms);
                 break;
-            case EVENT_ENABLE_BONE_SLICE:
-                _boneSlice = true;
-                break;
-            case EVENT_SPELL_BONE_SPIKE_GRAVEYARD:
-                {
-                    bool a = me->HasAura(SPELL_BONE_STORM);
-                    if (IsHeroic() || !a)
-                        me->CastSpell(me, SPELL_BONE_SPIKE_GRAVEYARD, a);
-                    events.Repeat(15s, 20s);
-                }
-                break;
-            case EVENT_SPELL_COLDFLAME:
-                if (!me->HasAura(SPELL_BONE_STORM))
-                    me->CastSpell((Unit*)nullptr, SPELL_COLDFLAME_NORMAL, false);
-                events.Repeat(5s);
-                break;
-            case EVENT_SPELL_COLDFLAME_BONE_STORM:
-                me->CastSpell(me, SPELL_COLDFLAME_BONE_STORM, false);
-                break;
-            case EVENT_WARN_BONE_STORM:
-                _boneSlice = false;
-                Talk(EMOTE_BONE_STORM);
-                Talk(SAY_BONE_STORM);
-                me->FinishSpell(CURRENT_MELEE_SPELL, false);
-                me->CastSpell(me, SPELL_BONE_STORM, false);
-                me->SetReactState(REACT_PASSIVE); // to prevent chasing another target on UpdateVictim()
-                me->GetMotionMaster()->MoveIdle();
-                me->GetMotionMaster()->MovementExpired();
-                events.Repeat(90s, 95s);
-                events.ScheduleEvent(EVENT_BEGIN_BONE_STORM, 3050ms);
-                break;
-            case EVENT_BEGIN_BONE_STORM:
-                {
-                    uint32 _boneStormDuration = RAID_MODE<uint32>(20000, 30000, 20000, 30000);
-                    if (Aura* pStorm = me->GetAura(SPELL_BONE_STORM))
-                        pStorm->SetDuration(int32(_boneStormDuration));
-                    events.ScheduleEvent(EVENT_BONE_STORM_MOVE, 0ms);
-                    events.ScheduleEvent(EVENT_END_BONE_STORM, _boneStormDuration + 1);
-                }
-                break;
-            case EVENT_BONE_STORM_MOVE:
-                {
-                    if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == POINT_MOTION_TYPE)
+            }
+            events.Repeat(5s);
+            Unit* unit = SelectTarget(SelectTargetMethod::Random, 0, BoneStormMoveTargetSelector(me));
+            if (!unit)
+            {
+                if ((unit = SelectTarget(SelectTargetMethod::MaxThreat, 0, 175.0f, true)))
+                    if (unit->GetPositionX() > -337.0f)
                     {
-                        events.Repeat(1ms);
-                        break;
+                        EnterEvadeMode();
+                        return;
                     }
-                    events.Repeat(5s);
-                    Unit* unit = SelectTarget(SelectTargetMethod::Random, 0, BoneStormMoveTargetSelector(me));
-                    if (!unit)
-                    {
-                        if ((unit = SelectTarget(SelectTargetMethod::MaxThreat, 0, 175.0f, true)))
-                            if (unit->GetPositionX() > -337.0f)
-                            {
-                                EnterEvadeMode();
-                                return;
-                            }
-                    }
-                    if (unit)
-                        me->GetMotionMaster()->MoveCharge(unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ(), 25.0f, 1337);
-                    break;
-                }
-                break;
-            case EVENT_END_BONE_STORM:
-                me->StopMoving();
-                me->GetMotionMaster()->MovementExpired();
-                me->SetReactState(REACT_AGGRESSIVE);
-                DoStartMovement(me->GetVictim());
-                events.CancelEvent(EVENT_BONE_STORM_MOVE);
-                events.ScheduleEvent(EVENT_ENABLE_BONE_SLICE, 10s);
-                if (!IsHeroic())
-                    events.RescheduleEvent(EVENT_SPELL_BONE_SPIKE_GRAVEYARD, 15s, 20s);
-                break;
-            case EVENT_ENRAGE:
-                me->CastSpell(me, SPELL_BERSERK, true);
-                Talk(SAY_BERSERK);
-                break;
+            }
+            if (unit)
+                me->GetMotionMaster()->MoveCharge(unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZ(), 25.0f, 1337);
+            break;
+        }
+        break;
+        case EVENT_END_BONE_STORM:
+            me->StopMoving();
+            me->GetMotionMaster()->MovementExpired();
+            me->SetReactState(REACT_AGGRESSIVE);
+            DoStartMovement(me->GetVictim());
+            events.CancelEvent(EVENT_BONE_STORM_MOVE);
+            events.ScheduleEvent(EVENT_ENABLE_BONE_SLICE, 10s);
+            if (!IsHeroic())
+                events.RescheduleEvent(EVENT_SPELL_BONE_SPIKE_GRAVEYARD, 15s, 20s);
+            break;
+        case EVENT_ENRAGE:
+            me->CastSpell(me, SPELL_BERSERK, true);
+            Talk(SAY_BERSERK);
+            break;
         }
 
         if (me->HasAura(SPELL_BONE_STORM))
@@ -332,26 +332,28 @@ public:
 
             switch (events.ExecuteEvent())
             {
-                case 0:
+            case 0:
+                break;
+            case 1:
+            {
+                me->m_positionZ = 42.5f;
+                me->DisableSpline();
+                me->CastSpell(me, SPELL_COLDFLAME_SUMMON, true);
+                float nx = me->GetPositionX() + 5.0f * cos(me->GetOrientation());
+                float ny = me->GetPositionY() + 5.0f * std::sin(me->GetOrientation());
+                Position newPosition = me->GetNearPosition(nx, ny);
+                float nz = newPosition.GetPositionZ();
+                if (!me->IsWithinLOS(nx, ny, nz))
+                {
                     break;
-                case 1:
-                    {
-                        me->m_positionZ = 42.5f;
-                        me->DisableSpline();
-                        me->CastSpell(me, SPELL_COLDFLAME_SUMMON, true);
-                        float nx = me->GetPositionX() + 5.0f * cos(me->GetOrientation());
-                        float ny = me->GetPositionY() + 5.0f * std::sin(me->GetOrientation());
-                        if (!me->IsWithinLOS(nx, ny, 42.5f))
-                        {
-                            break;
-                        }
-                        me->NearTeleportTo(nx, ny, 42.5f, me->GetOrientation());
-                        events.Repeat(450ms);
-                    }
-                    break;
-                case 2:
-                    events.Reset();
-                    break;
+                }
+                me->NearTeleportTo(nx, ny, nz, me->GetOrientation());
+                events.Repeat(450ms);
+            }
+            break;
+            case 2:
+                events.Reset();
+                break;
             }
         }
     };
@@ -384,7 +386,7 @@ public:
             if (TempSummon* summ = me->ToTempSummon())
                 if (Unit* trapped = summ->GetSummonerUnit())
                 {
-                    Position exitPos = {me->GetPositionX(), me->GetPositionY(), 60.0f, me->GetOrientation()};
+                    Position exitPos = { me->GetPositionX(), me->GetPositionY(), 60.0f, me->GetOrientation() };
                     trapped->UpdateAllowedPositionZ(exitPos.GetPositionX(), exitPos.GetPositionY(), exitPos.m_positionZ);
                     exitPos.m_positionZ += 1.0f;
                     if (Unit* vehBase = trapped->GetVehicleBase())
@@ -487,7 +489,7 @@ public:
         void SelectTarget(std::list<WorldObject*>& targets)
         {
             targets.clear();
-            Unit* target = GetCaster()->GetAI()->SelectTarget(SelectTargetMethod::Random, 1, -1.0f, true,true,  -SPELL_IMPALED); // -1.0f as it takes into account object size
+            Unit* target = GetCaster()->GetAI()->SelectTarget(SelectTargetMethod::Random, 1, -1.0f, true, true, -SPELL_IMPALED); // -1.0f as it takes into account object size
             if (!target)
                 target = GetCaster()->GetAI()->SelectTarget(SelectTargetMethod::Random, 0, 0.0f, true); // if only tank or noone outside of boss' model
             if (!target)
@@ -561,7 +563,7 @@ public:
                 std::vector<Player*>::iterator begin = validPlayers.begin(), end = validPlayers.end();
 
                 std::random_device rd;
-                std::shuffle(begin, end, std::default_random_engine{rd()});
+                std::shuffle(begin, end, std::default_random_engine{ rd() });
 
                 for (uint8 i = 0; i < boneSpikeCount && i < validPlayers.size(); ++i)
                 {
@@ -711,4 +713,3 @@ void AddSC_boss_lord_marrowgar()
     new spell_marrowgar_bone_storm();
     new spell_marrowgar_bone_slice();
 }
-
