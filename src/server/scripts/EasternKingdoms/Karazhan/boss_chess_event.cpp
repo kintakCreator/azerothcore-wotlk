@@ -1521,7 +1521,7 @@ struct npc_chesspiece : public ScriptedAI
             _charmerGUID = charmer->GetGUID();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
             me->SetWalk(true);
-            charmer->RemoveAurasDueToSpell(SPELL_GAME_IN_SESSION);
+            //charmer->RemoveAurasDueToSpell(SPELL_GAME_IN_SESSION);
 
             // Build new action bar
             if (Player* playerCharmer = charmer->ToPlayer())
@@ -2069,8 +2069,9 @@ class spell_control_piece : public AuraScript
     {
         if (Player* player = GetTarget()->ToPlayer())
         {
+            player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED);
             player->StopCastingBindSight();
-        }
+        }   
     }
 
     void Register() override
